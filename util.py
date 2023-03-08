@@ -2,15 +2,17 @@ from bs4 import BeautifulSoup
 import requests
 import re
 
-from model import Board
-from db import session
+from model import CrawlBoard
+from db import get_session, get_engine
 
 
-def save_board_data_from_bithumb(page: int = 1):
+def save_board_data_from_bithumb(page: int = 1) -> bool:
     """
     page = 1 (default: 첫페이지)
     크롤링후 Board 테이블에 데이터를 저장
     """
+    session = get_session(get_engine())
+
     try:
         url = f"https://cafe.bithumb.com/view/boards/43?pageNumber={page - 1}&noticeCategory=5"
         headers = {
@@ -19,13 +21,13 @@ def save_board_data_from_bithumb(page: int = 1):
         response = requests.get(url, headers=headers)
     except Exception as e:
         print(f'URL 요청중 에러 발생: {e}')
-        return
+        return False
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    numbers_tags = soup.select(
+    ids_tag = soup.select(
         '#dataTables > tbody > tr > td.invisible-mobile.small-size')
-    numbers = [number_tag.text for number_tag in numbers_tags]
+    ids = [id_tag.text for id_tag in ids_tag]
 
     contents_tags = soup.select('#dataTables > tbody > tr > td.one-line > a')
     contents = [content_tag.text for content_tag in contents_tags]
@@ -33,11 +35,12 @@ def save_board_data_from_bithumb(page: int = 1):
     if len(contents) == 11:
         raise ValueError('존재하지 않는 페이지 입니다.')
 
-    for no, content in zip(numbers, contents):
-        if no.isnumeric() and session.query(Board).filter(Board.no == no).count() == 0:
-            session.add(Board(no=no, content=content))
+    for _id, content in zip(ids, contents):
+        if _id.isnumeric() and session.query(CrawlBoard).filter(CrawlBoard.id == _id).count() == 0:
+            session.add(CrawlBoard(id=_id, content=content))
     session.commit()
     session.close()
+    return True
 
 
 def parsing_data(content):
