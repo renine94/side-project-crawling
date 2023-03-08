@@ -20,11 +20,14 @@ class CrawlBoard(Base):
 class CrawlSymbol(Base):
     __tablename__ = 'crawl_symbol'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), unique=True, comment='심볼 이름')
-    is_warning = Column(Boolean, default=False, comment='유의 여부')
-    new_at = Column(DateTime(timezone=True), default=None, nullable=True)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment='업데이트 시간')
+    idx = Column(Integer, primary_key=True)
+    exchange = Column(String(255), comment='거래소')
+    market = Column(String(255), unique=True, comment='마켓 종류')
+    symbol = Column(String(255), unique=True, comment='코인 심볼')
+    caution = Column(Boolean, default=False, comment='유의종목 여부')
+    new_listing = Column(Boolean, default=False, comment='신규상장 여부')
+    cs_time = Column(DateTime(timezone=True), default=None, nullable=True, comment='유의종목 시작일')
+    listing_time = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment='상장일')
 
 
     def __repr__(self):
